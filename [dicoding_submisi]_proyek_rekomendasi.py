@@ -322,8 +322,6 @@ CF memberikan prediksi rating. Maka Precision@k dihitung dari berapa banyak item
 """
 
 def precision_at_k_cf(predictions, k=10, threshold=4.0):
-    from collections import defaultdict
-
     # Kelompokkan prediksi berdasarkan user
     top_k = defaultdict(list)
     for uid, iid, true_r, est, _ in predictions:
