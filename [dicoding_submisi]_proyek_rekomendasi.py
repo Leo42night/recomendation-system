@@ -9,24 +9,15 @@ Original file is located at
 # Laporan Proyek Machine Learning - Leo Prangs Tobing
 """
 
-# from google.colab import drive
-# drive.mount('/content/drive')
-
 """## Project Overview
 
 **Latar Belakang:**
 
-Steam adalah salah satu platform distribusi game digital terbesar di dunia dengan jutaan pengguna aktif. Dengan jumlah game yang terus bertambah setiap tahun, pengguna sering mengalami kesulitan dalam menemukan game yang sesuai dengan preferensi mereka. Hal ini menciptakan kebutuhan akan sistem rekomendasi yang cerdas untuk membantu pengguna menavigasi katalog game yang luas.
+Dalam era digital, jumlah buku yang tersedia secara daring terus meningkat dengan sangat pesat. Platform-platform seperti Amazon, Goodreads, atau sistem perpustakaan digital menyediakan katalog buku yang sangat luas, yang justru dapat menyulitkan pembaca dalam menemukan buku yang sesuai dengan preferensi atau minat mereka. Hal ini menciptakan kebutuhan akan sistem rekomendasi yang cerdas untuk membantu pengguna menavigasi pilihan yang sangat banyak.
 
-Sistem rekomendasi telah menjadi komponen penting dalam berbagai platform digital untuk meningkatkan personalisasi dan pengalaman pengguna. Dalam konteks Steam, sistem ini dapat membantu pengguna menemukan game yang relevan berdasarkan minat atau riwayat interaksi mereka. Selain itu, sistem rekomendasi juga berperan dalam meningkatkan keterlibatan pengguna dan konversi pembelian, yang pada akhirnya berdampak pada keuntungan platform secara keseluruhan.
+Sistem rekomendasi telah menjadi komponen penting dalam meningkatkan **pengalaman pengguna** dan **personalisasi** dalam berbagai platform digital, termasuk dalam industri buku. Dalam konteks ini, sistem rekomendasi dapat memberikan saran buku yang relevan berdasarkan minat pembaca, riwayat interaksi, atau penilaian (rating) mereka terhadap buku sebelumnya. Selain membantu pengguna menemukan buku yang sesuai, sistem ini juga berperan penting dalam meningkatkan **keterlibatan pengguna**, **retensi pembaca**, dan bahkan **peningkatan penjualan** atau sirkulasi buku di platform penyedia layanan.
 
-Beberapa pendekatan umum dalam sistem rekomendasi meliputi **Content-Based Filtering** dan **Collaborative Filtering**. Content-Based Filtering bekerja dengan membandingkan fitur konten antar item (misalnya genre, tag, developer), sedangkan Collaborative Filtering merekomendasikan item berdasarkan perilaku pengguna lain yang memiliki preferensi serupa. Menurut Aggarwal (2016), kedua pendekatan ini merupakan fondasi dari kebanyakan sistem rekomendasi modern, dan masing-masing memiliki keunggulan serta keterbatasan tergantung pada konteks penggunaannya. Di sisi lain, Jannach et al. (2010) juga menekankan pentingnya sistem rekomendasi dalam meningkatkan pengalaman pengguna dan efisiensi pencarian, terutama dalam lingkungan dengan pilihan item yang sangat banyak seperti pada toko game digital.
-
-**Mengapa masalah ini penting:**
-
-- Membantu pengguna menemukan game yang sesuai dengan minat mereka (Jannach et al., 2010).
-- Meningkatkan konversi pembelian game di platform (Aggarwal, 2016).
-- Mendorong penggunaan platform secara lebih intensif dan mempertahankan pengguna aktif (Aggarwal, 2016; Jannach et al., 2010).
+Dua pendekatan umum yang sering digunakan dalam pengembangan sistem rekomendasi adalah **Content-Based Filtering (CBF)** dan **Collaborative Filtering (CF)**. Content-Based Filtering bekerja dengan membandingkan fitur-fitur konten antar buku (seperti genre, penulis, atau kata kunci deskripsi), sedangkan Collaborative Filtering menggunakan pola interaksi pengguna lain yang memiliki preferensi serupa. Menurut Aggarwal (2016), kedua pendekatan ini merupakan dasar dari kebanyakan sistem rekomendasi modern. Di sisi lain, Jannach et al. (2010) menekankan pentingnya sistem rekomendasi dalam mendukung eksplorasi item dalam katalog besar, termasuk dalam konteks literatur atau buku.
 
 **Referensi:**
 
@@ -35,344 +26,431 @@ Beberapa pendekatan umum dalam sistem rekomendasi meliputi **Content-Based Filte
 
 ## Business Understanding
 
-**1. Problem Statements**
+**Problem Statements:**
 
-- Bagaimana merekomendasikan game kepada pengguna baru berdasarkan konten game (genre, tag, developer)?
-- Bagaimana memberikan rekomendasi personal kepada pengguna berdasarkan kesamaan rating/ulasan dengan pengguna lain?
+- Banyak pengguna kesulitan menemukan buku yang sesuai dengan minat mereka karena banyaknya pilihan.
+- Rekomendasi buku yang ditampilkan sering kali tidak dipersonalisasi berdasarkan preferensi pengguna sebelumnya.
+- Tidak adanya sistem pendukung keputusan yang membantu pengguna mengeksplorasi buku-buku baru yang relevan dengan preferensi mereka.
 
-**2. Goals**
+**Project Goals:**
 
-- Membangun sistem rekomendasi berbasis konten (Content-Based Filtering) untuk memberikan rekomendasi berdasarkan fitur game.
-- Membangun sistem Collaborative Filtering berbasis user-rating/interaction.
-- Membandingkan performa kedua metode.
+- Mengembangkan sistem rekomendasi buku yang dapat memberikan saran bacaan personal berdasarkan data riwayat rating pengguna.
+- Membandingkan dua pendekatan sistem rekomendasi, yaitu Content-Based Filtering dan Collaborative Filtering, untuk mengevaluasi mana yang lebih efektif dalam memberikan rekomendasi yang relevan.
+- Mengukur performa model menggunakan metrik evaluasi seperti **Precision** dan **Recall** berdasarkan buku-buku yang paling disukai (rating tertinggi) oleh pengguna.
 
-**3. Solution Statements**
+**Solution Approach:**
 
-- **Solution 1: Content-Based Filtering**
-  Menggunakan fitur seperti genre, tag, dan developer untuk menghitung kemiripan antar game menggunakan TF-IDF + cosine similarity.
-
-- **Solution 2: Collaborative Filtering**
-  Menggunakan Matrix Factorization (SVD) berdasarkan data interaksi pengguna (misal: review, rating atau playtime) untuk memprediksi preferensi pengguna.
+- **Content-Based Filtering (CBF):** Rekomendasi diberikan berdasarkan kesamaan konten antar buku, seperti kesamaan tag, genre, atau fitur tekstual lainnya.
+- **Collaborative Filtering (CF):** Rekomendasi dibuat berdasarkan perilaku dan pola rating dari pengguna lain yang memiliki preferensi serupa.
+- Untuk evaluasi, dilakukan split data berdasarkan buku-buku dengan rating tertinggi sebagai *ground truth*, dan sistem akan diuji apakah mampu merekomendasikan buku tersebut kembali dalam top-N hasil.
+- Metrik yang digunakan untuk mengevaluasi performa adalah **Precision** dan **Recall**, untuk mengukur seberapa relevan dan lengkap rekomendasi yang dihasilkan oleh sistem.
 
 ## Data Understanding
 
 ### Load Data
 
-Dataset yang digunakan adalah **Steam Store Games** dari [Kaggle](https://www.kaggle.com/datasets/nikdavis/steam-store-games), berisi informasi lengkap tentang game di platform Steam, termasuk konten, popularitas, dan metadata lainnya.
+Siapkan semua library yang diperlukan proyek & load dataset. Dataset yang digunakan adalah **Book-Crossing: User review ratings** dari [Kaggle](https://www.kaggle.com/datasets/ruchi798/bookcrossing-dataset), dengan file yang digunakan adalah `Preprocessed_data.csv` (kombinasi informasi user, buku dan rating)
 """
 
+# # Install depedensi yang sesuai dengan Google Colab (lingkunan notebook proyek) setelah selesai, restart ulang sesi
 # !pip install numpy==1.24.4 --force-reinstall
-# !pip install scikit-surprise==1.1.4 --force-reinstall
 
-# load library
+# !pip install -qq scikit-surprise==1.1.4
+# !pip install -qq kagglehub
+
+# load & EDA
+import kagglehub
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from wordcloud import WordCloud
 
 # Preprocesasing
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.preprocessing import normalize
 import numpy as np # ajust dtype
-from sklearn.preprocessing import MinMaxScaler
+from collections import defaultdict
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # modelling
 from sklearn.metrics.pairwise import cosine_similarity
 from surprise import SVD, Dataset, Reader
-from surprise.model_selection import train_test_split
-from surprise import accuracy
-
-# evaluation
-from collections import defaultdict
 
 # Untuk .py file (run in terminal)
 from IPython.display import display
 
-# df = pd.read_csv("/content/drive/MyDrive/Dicoding/steam.csv")
-df = pd.read_csv("steam.csv")
+# Inferensi
+import random
+
+# Download latest version
+path = kagglehub.dataset_download("ruchi798/bookcrossing-dataset")
+
+print("Path to dataset files:", path)
+
+df = pd.read_csv(f"{path}/Books Data with Category Language and Summary/Preprocessed_data.csv")
+print("df.shape", df.shape)
 display(df.head())
-df.shape
 
 """**Insight:**
 
-terdapat **27.075 baris** data:
+Terdapat **1.031.175 baris** data, dengan 19 kolom:
 
-| Fitur              | Deskripsi                                                  |
-| ------------------ | ---------------------------------------------------------- |
-| `appid`            | ID unik dari game                                          |
-| `name`             | Nama game                                                  |
-| `release_date`     | Tanggal rilis game                                         |
-| `english`          | Boolean (1 jika game berbahasa Inggris)                    |
-| `developer`        | Nama pengembang game                                       |
-| `publisher`        | Nama penerbit game                                         |
-| `platforms`        | Platform tempat game dapat dimainkan (Windows, Linux, Mac) |
-| `required_age`     | Umur minimal pemain                                        |
-| `categories`       | Kategori game seperti Singleplayer, Multiplayer, Co-op     |
-| `genres`           | Genre game seperti Action, Strategy, Adventure             |
-| `steamspy_tags`    | Tag deskriptif yang diberikan oleh komunitas Steam         |
-| `achievements`     | Jumlah pencapaian dalam game                               |
-| `positive_ratings` | Jumlah ulasan positif dari pengguna                        |
-| `negative_ratings` | Jumlah ulasan negatif dari pengguna                        |
-| `average_playtime` | Rata-rata waktu bermain (dalam menit)                      |
-| `price`            | Harga game (dalam USD)                                     |
-| `initialprice`     | Harga awal sebelum diskon                                  |
-| `discount`         | Persentase diskon game (jika ada)                          |
-| `rating`           | Rating game (jika tersedia)                                |
+| No. | Kolom              | Deskripsi                                                                 |
+|-----|--------------------|---------------------------------------------------------------------------|
+| 1   | `Unnamed: 0`       | Indeks baris yang dihasilkan secara otomatis saat menyimpan file (bisa diabaikan). |
+| 2   | `user_id`          | ID unik dari pengguna. Digunakan untuk mengidentifikasi user secara individual. |
+| 3   | `location`         | Lokasi tempat tinggal pengguna dalam format "kota, provinsi, negara". |
+| 4   | `age`              | Usia pengguna (dalam tahun). Tipe numerik. |
+| 5   | `isbn`             | Nomor ISBN sebagai pengenal unik buku. |
+| 6   | `rating`           | Nilai rating yang diberikan pengguna terhadap buku. Biasanya dalam skala 0–10. |
+| 7   | `book_title`       | Judul lengkap dari buku. |
+| 8   | `book_author`      | Nama penulis buku. |
+| 9   | `year_of_publication` | Tahun buku tersebut diterbitkan. |
+| 10  | `publisher`        | Nama penerbit buku. |
+| 11  | `img_s`            | URL ke gambar sampul buku berukuran kecil (small). |
+| 12  | `img_m`            | URL ke gambar sampul buku berukuran sedang (medium). |
+| 13  | `img_l`            | URL ke gambar sampul buku berukuran besar (large). |
+| 14  | `Summary`          | Ringkasan atau deskripsi isi buku. Dapat digunakan sebagai fitur teks dalam sistem rekomendasi. |
+| 15  | `Language`         | Bahasa yang digunakan dalam buku (contoh: `en` untuk English). |
+| 16  | `Category`         | Kategori atau genre buku, biasanya dalam bentuk list string (misalnya: `['Social Science']`). |
+| 17  | `city`             | Kota asal pengguna (dipecah dari kolom `location`). |
+| 18  | `state`            | Negara bagian atau provinsi asal pengguna (dipecah dari kolom `location`). |
+| 19  | `country`          | Negara asal pengguna (dipecah dari kolom `location`). |
 
 ### EDA
-Beberapa analisis penting
+Beberapa analisis yang punya insight penting
 """
 
-display(df.info()) # release_date to datetime
+# Melihat jumlah user dan jumlah buku
+print(f"{df['user_id'].nunique()} user, {df['isbn'].nunique()} buku")
 
-print('df.isna().sum():\n',df.isna().sum()) # developer 1, publisher 14
+display(df.info())
 
-dupe = df['name'][df['name'].duplicated()].unique()
-print(f"duplicated name ({len(dupe)}): {dupe}") # 41 nama, wajar karena public domain
+print('df.isna().sum():\n',df.isna().sum())
 
-display('df.describe().T: ',df.describe().T) # price 75% < 7.19, untuk range 0 - 421.99
+display('df.describe().T: ',df.describe().T)
 
-for col in ['genres', 'steamspy_tags', 'categories', 'developer']:
+display(df[df['age'] == 5].head(3))
+display(df[df['year_of_publication'] == 1376])
+
+for col in ['age', 'Language', 'Category']: # kolom kategori atau ordinal yang perlu diperiksa
     print(f"{col}: {df[col].unique().tolist()}")
 
+display(df[df['Summary'] == '9'].head(3))
+
 """**Insight:**
-- **change dtype:** `release_date` to datetime
-- **null value:** `developer` = 1, `publisher` = 14
-- **duplicate:** `name` = 41, wajar karena public domain
-- **number distribution:** `price` 75% is below 7.19, untuk range 0 - 421.99
-- **feature**: `genres` & `steamspy_tags` memiliki data yang mirip
+- 92.107 user, 270.170 buku
+- **change Dtype:** `age` & `year_of_publication` dapat diubah ke **int**
+- **null value:** `book_author` = 1, `city` = 14k, `state` = 22k, `country` = 35k
+- **number distribution:**
+ - **outliers**: `age` diusia 5 untuk rata-rata pembaca usia 36 tahun, dan `year_of_publication` yang punya tahun 1376 untuk rata rata tahun 1995.
+ - 50% data `rating` bernilai 0, mungkin karena: Rating default (belum memberikan penilaian) atau pengguna tidak suka bukunya.
+- **Invalid Value**:
+ - nilai `34.74389988072476` pade `age` perlu dibulatkan
+ - nilai `9` pada `Summary`, `Language`, dan `Category` bisa berarti placeholder untuk metadata buku yang tidak perlu ditampilkan kembali setelah kemunculan pertama
+
+Catatan: Hasil insight hanya untuk pemahaman umum, berguna atau tidak tergantung apakah kolom dipakai untuk modelling.
 
 ## Data Preparation
 
-### Clean DF (df2)
-
-perbaikan df: null dan duplikasi nama. `df2` yang akan dipakai dalam evaluasi
+### Pembersihan
+Hapus kolom tidak berguna, ubah tipe data, handle null & ubah data invalid.
 """
 
-df2 = df.copy(deep=True)
+df2 = df.copy(deep=True) # Berganti ke versi 2 (lebih bersih)
 
-# mengisi nilai kosong pada developer dan publisher
-df2['developer'] = df2['developer'].fillna('')
-df2['publisher'] = df2['publisher'].fillna('')
+# --- CLEANING ---
+# Hapus 7 kolom yang tidak diperlukan
+df2 = df2.drop(columns=['Unnamed: 0', 'img_s', 'img_m', 'img_l', 'city', 'state', 'country', 'Summary'])
 
-# ubah name jadi unik karena rekomendasi menggunakan nama sebagai index
-df2['name'] = df2['name'].str.lower()
-df2 = df2.drop_duplicates(subset='name', keep='first')
-df2.sample(5)
+# ubah tipe data
+df2['age'] = df2['age'].astype(int)
+df2['year_of_publication'] = df2['year_of_publication'].astype(int)
 
-"""### df2 -> df_cb [combined_features]
+# isi nilai null
+df2['book_author'] = df2['book_author'].astype(str).fillna('')
 
-untuk Model 1: Content-Based Filtering (TF-IDF + cosine similarity), semua fitur label digabung untuk menghasilkan fitur utama yang akan digunakan
+# ubah data invalid
+df2['Language'] = df2['Language'].replace('9', '', regex=False)
+df2['Category'] = df2['Category'].replace('9', '', regex=False)
+
+df2.shape
+
+"""Walau dapat dipakai untuk model CB, Kolom `Summary` dihapus karena dapat menimbulkan noise.
+
+### Sampling
+Ambil irisan dari masing-masing top 500 User dan Buku (untuk performa).
 """
 
-df_cb = df2.copy(deep=True)
+# --- SAMPLING ---
+# ambil 500 user_id yang paling sering muncul
+top_500_users = df['user_id'].value_counts().nlargest(500).index.tolist()
 
-# Gabungkan kolom-kolom teks
-df_cb['combined_features'] = df_cb[['genres', 'steamspy_tags', 'categories', 'developer']].agg(';'.join, axis=1) # ; akan aturan pemisah
+# ambil 500 isbn yang paling sering muncul
+top_500_isbns = df['isbn'].value_counts().nlargest(500).index.tolist()
+
+print("Top 500 User IDs:")
+print(top_500_users[:10]) # print beberapa contoh
+print("\nTop 500 ISBNs:")
+print(top_500_isbns[:10]) # print beberapa contoh
+
+# Filter the DataFrame to include only interactions from the top 500 users
+df_filtered_users = df2[df2['user_id'].isin(top_500_users)]
+
+# Further filter the result to include only interactions with the top 500 ISBNs
+df2 = df_filtered_users[df_filtered_users['isbn'].isin(top_500_isbns)].reset_index(drop=True)
+
+df2.shape
+
+"""Dataset hasil filter: **~29.000** baris.
+
+### Pembuatan Data untuk Model
+
+#### `df_book` (CBF)
+Versi unik buku + combined_features (gabungan title, author, publisher, language, category) untuk CBF.
+"""
+
+df_book = df2.copy(deep=True)
+
+# ambil nilai book unik berdasarka isbn
+df_book = df_book.drop_duplicates('isbn')
+
+# Gabungkan kolom-kolom teks (nilai pengelompokkan dan kepemilikan)
+df_book['combined_features'] = df_book[['book_title', 'book_author', 'publisher', 'Language', 'Category']].agg(' '.join, axis=1)
 
 pd.set_option('display.max_colwidth', None) # Jangan potong isi kolom
 pd.set_option('display.width', None) # Biarkan lebar menyesuaikan layar
 pd.set_option('display.max_columns', None) # Tampilkan semua kolom jika banyak
 
 # sederhanakan tabel
-df_cb = df_cb[['name', 'combined_features']]
-df_cb.sample(10)
+df_book = df_book[['isbn', 'book_title', 'combined_features']].reset_index(drop=True)
+
+print(df_book.shape)
+df_book.sample(10)
 
 """- Setiap fitur penting digabung karena TF-IDF Butuh Representasi Teks Tunggal
-- titik koma (**;**) akan digunakan kembali sebagai separator saat evaluasi
 
-Selanjutnya adalah persiapam data mapping dan vector (dengan filter pembatas antara 20% - 80%)
+#### `train_data` & `test_ground_truth`
+- Buat ground truth: Ambil hanya buku dengan rating >= 5.
+- Pisahkan test dan train: Gunakan 1 buku terakhir dari user sebagai test, sisanya sebagai train.
+- Model Content-Based Filtering (CBF) yang menggunakan kemiripan antar fitur dievaluasi menggunakan data train dan test ini.
 """
 
-# Buat mapping nama game ke index
-indices = pd.Series(df_cb.index, index=df_cb['name'].str.lower()).drop_duplicates()
+# --- Filter rating >= 5 (threshold minimum rating yang dianggap relevan (Disukai)) ---
+liked = df2[df2["rating"] >= 5]
 
-# TF-IDF Vectorizer dengan filtering kata umum/rare
-tfidf = TfidfVectorizer(
-    stop_words='english',
-    max_df=0.8,     # Hapus kata yang muncul di >80% dokumen
-    min_df=2        # Hapus kata yang muncul di <20% dokumen
-)
+# --- Mapping user -> daftar (isbn, rating) ---
+user_liked_books = defaultdict(list)
+
+for _, row in liked.iterrows():
+    user_liked_books[row["user_id"]].append((row["isbn"], row["rating"]))
+
+# --- Split ke train dan test (test: buku dengan rating tertinggi) ---
+train_data = []
+test_ground_truth = {}
+
+for user, books in user_liked_books.items():
+    if len(books) < 2:
+        print("ada user dengan data terlalu sedikit di-skip")
+        continue  # user dengan data terlalu sedikit di-skip
+
+    # Urutkan buku berdasarkan rating (tinggi ke rendah)
+    books_sorted = sorted(books, key=lambda x: x[1], reverse=True)
+    highest_rating = books_sorted[0][1]
+
+    # Ambil semua buku dengan rating tertinggi sebagai test
+    test_books = [isbn for isbn, rating in books_sorted if rating == highest_rating]
+
+    # Sisanya masuk ke data latih
+    train_books = [isbn for isbn, rating in books_sorted if rating < highest_rating]
+
+    if len(test_books) > 0 and len(train_books) > 0:
+        test_ground_truth[user] = test_books
+        train_data.extend([(user, isbn) for isbn in train_books])
+
+print(user_liked_books)
+
+print(train_data[:5])
+print(test_ground_truth)
+
+"""#### `train_df_cf` (CF)
+- Digunakan untuk model Collaborative Filtering.
+- Model CF yang menggunakan pola user book dari user lain yang serupa (dari train data) dan merekomendasikannya, hasilnya akan dievaluasi dengan data testing.
+"""
+
+# Buat DataFrame dari train_data
+train_df_cf = pd.DataFrame(train_data, columns=["user_id", "isbn"])
+train_df_cf["rating"] = 5  # Karena semua data ini adalah rating >= 5 (menyederhanakan model)
+
+"""## Modelling
+
+### Content-Based Filtering (CBF)
+
+- Membandingkan kemiripan antar buku berdasarkan konten atau metadata-nya.
+- Fitur-fitur dalam string (`combined_features`)  ditransformasikan ke dalam bentuk vektor menggunakan **TF-IDF (Term Frequency - Inverse Document Frequency)**.
+- Kemiripan antar buku dihitung menggunakan **cosine similarity** antar vektor.
+"""
+
+# TF-IDF Vectorizer
+tfidf = TfidfVectorizer(stop_words='english')
 
 # Transformasikan ke bentuk numerik
-tfidf_matrix = tfidf.fit_transform(df_cb['combined_features'])
+tfidf_matrix = tfidf.fit_transform(df_book['combined_features'])
 
-# Pastikan tidak ada NaN
-assert not np.any(np.isnan(tfidf_matrix.toarray()))
-
-# Ukuran matriks (baris: game, kolom: kata unik)
+# Ukuran matriks (baris: isbn, kolom: kata unik dari combined_features)
 print(f"TF-IDF matrix shape: {tfidf_matrix.shape}")
 
 # Contoh kata-kata (fitur) yang dihasilkan
 feature_names = tfidf.get_feature_names_out()
-print(f"Contoh fitur: {feature_names[:10]}")
+print(f"Contoh fitur: {feature_names[:20]}")
 
-"""- Fitut di filter untuk mengurangi noise fitur yang terlalu sering/jarang muncul
-- Didapatkan matriks TF-IDF dengan ukuran 27012 ✖ 6258
+"""- Didapatkan matriks TF-IDF dengan ukuran 500 ✖ 230"""
 
-### df2 -> df_cf
+# --- Mapping ISBN ke indeks yang dipakai dalam model tf-idf matrix ---
+isbn_to_index = {isbn: idx for idx, isbn in enumerate(df_book['isbn'])}
+index_to_isbn = {v: k for k, v in isbn_to_index.items()}
 
-Untuk model 2: Collaborative Filtering (SVD), Karena dataset tidak mengandung data eksplisit pengguna seperti user_id, maka untuk menggunakan metode ini, perlu membuat pseudo-user berdasarkan kombinasi genre/tag, lalu menggunakan rasio positif terhadap total ulasan (positif + negatif) sebagai proksi untuk rating.
+def get_similar_books(isbn, top_n=10):
+    if isbn not in isbn_to_index:
+        return []
+    idx = isbn_to_index[isbn]
+    cosine_sim = cosine_similarity(tfidf_matrix[idx], tfidf_matrix).flatten()
+    similar_indices = cosine_sim.argsort()[::-1][1:top_n+1]
+    return [index_to_isbn[i] for i in similar_indices]
+
+# Ambil semua buku yang disukai user dari train
+user_liked_books = defaultdict(list)
+for user, isbn in train_data: # Data Uji
+    user_liked_books[user].append(isbn)
+
+# Buat prediksi rekomendasi berdasarkan kesamaan buku yang disukai
+predictions_cbf = {}
+for user, liked_books in user_liked_books.items():
+    recs = []
+    for b in liked_books:
+        recs.extend(get_similar_books(b, top_n=5))  # bisa ubah top_n
+    # Filter duplikat
+    predictions_cbf[user] = list(dict.fromkeys(recs))[:10]
+
+print("predictions_cbf (CBF):", predictions_cbf)
+print("Target Ground Truth:", test_ground_truth)
+
+"""Prediction kedua model dan Target Ground Truth akan dibandingkan untuk mendapatkan skor evaluasi
+
+### Collaborative Filtering (CF) – SVD
+- Berdasarkan pola rating yang diberikan oleh pengguna lain.
+- Menggunakan **SVD (Singular Value Decomposition)** dari library `surprise` untuk memfaktorkan matriks user-item menjadi representasi laten.
+- Model belajar dari `train_df_cf` (interaksi user-book dengan rating 5).
+
+Dengan trainset yang sudah disiapkan matriks (user, book, rating), metode Singular Value Decomposition dapat dilakukan.
 """
 
-df_cf = df2.copy(deep=True)
+# Buat dataset surprise
+reader = Reader(rating_scale=(1, 5)) # memberi tahu bahwa semua rating berada pada skala 1 hingga 5
+train_data_surp = Dataset.load_from_df(train_df_cf[["user_id", "isbn", "rating"]], reader) # menjadi objek dataset yang bisa digunakan oleh library surprise
+trainset = train_data_surp.build_full_trainset() # trainset adalah objek yang berisi semua data pelatihan yang siap digunakan oleh algoritma surprise
 
-# Buat pseudo-user_id dari kombinasi genre
-df_cf['user_id'] = df_cf['genres'].str.replace(';', '_').str.lower()
+model_cf = SVD()
+model_cf.fit(trainset)
 
-df_cf['rating'] = df_cf['positive_ratings'] / (df_cf['positive_ratings'] + df_cf['negative_ratings'] + 1e-5)
-df_cf['rating'] = df_cf['rating'] * 10  # Skala ke 0-10
+def get_top_n(model, trainset, all_isbns, users, n=10):
+    top_n = defaultdict(list)
 
-# Reader: skala rating
-reader = Reader(rating_scale=(0, 10))
+    for user in users:
+        try:
+            inner_uid = trainset.to_inner_uid(user)
+        except ValueError:
+            continue  # user tidak dikenal di trainset
 
-# Gunakan kolom yang sudah disiapkan
-data = Dataset.load_from_df(df_cf[['user_id', 'name', 'rating']], reader)
+        seen_books = set([isbn for (u, isbn) in train_data if u == user])
+        unseen_books = [isbn for isbn in all_isbns if isbn not in seen_books]
 
-# Bagi data latih dan uji
-trainset, testset = train_test_split(data, test_size=0.2, random_state=42)
-df_cf = df_cf[['user_id','name','rating']]
-display(df_cf.sample(5))
-display(df_cf.describe())
+        predictions = [model.predict(user, isbn) for isbn in unseen_books]
+        predictions.sort(key=lambda x: x.est, reverse=True)
 
-"""Didapatkan dataset yang cocok untuk model CF, berupa matrix user - game - rating, dan rating punya skala yang sesuai (0-10)
+        top_n[user] = [pred.iid for pred in predictions[:n]]
 
-## Modelling
+    return top_n
 
-### CBF
+# ISBN unik
+all_isbns = df2["isbn"].unique()
+users_to_eval = list(test_ground_truth.keys())
 
-Karena ram tidak sanggup menjalankan proses *cosine similarity* dengan data 27k data, maka pakai sample 1000 game pertama. model akan menilai kemiripan `combined_features`.
-"""
-
-# Ambil 10000 game pertama
-tfidf_sample = tfidf_matrix[:10000]
-cosine_sim = cosine_similarity(tfidf_sample)
-cosine_sim
-
-"""### CF
-Dengan trainset yang sudah disiapkan matriks (user, game, rating), metode Singular Value Decomposition dapat dilakukan.
-"""
-
-# Model SVD
-algo = SVD()
-algo.fit(trainset)
+# Buat prediksi rekomendasi
+predictions_cf = get_top_n(model_cf, trainset, all_isbns, users_to_eval, n=10)
+print("Predictions (CF): ", predictions_cf)
+print("Target Ground Truth:", test_ground_truth)
 
 """## Evaluation
 
-### CBF
-
-CBF menggunakan konten (genre). Jadi kita bisa mengukur precision dengan menghitung berapa banyak rekomendasi yang memiliki genre serupa dengan game yang sedang dianalisis.
+### Metrik Precision & Recall
 """
 
-def get_content_recommendations(title, cosine_sim, df, indices, top_k=10):
-    idx = indices[title.lower()]
-    sim_scores = list(enumerate(cosine_sim[idx]))
-    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-    sim_scores = sim_scores[1:top_k+1]
-    game_indices = [i[0] for i in sim_scores]
-    return df.iloc[game_indices], [i[1] for i in sim_scores]
+# Evaluasi
+def evaluate_precision_recall(predictions, ground_truth):
+    precisions, recalls = [], []
 
-def precision_at_k_cbf(title, recommended_df, df, k=10):
-    true_combined_features = set(df[df['name'].str.lower() == title.lower()]['combined_features'].values[0].split(';'))
-    rec_combined_features = recommended_df['combined_features'].apply(lambda x: set(x.split(';')))
-    relevan_count = rec_combined_features.apply(lambda x: len(true_combined_features & x) > 2).sum()
-    return relevan_count / k
+    for user in ground_truth:
+        if user not in predictions:
+            continue
+        true_items = set(ground_truth[user])
+        pred_items = set(predictions[user])
+        tp = len(true_items & pred_items)
 
-def mean_cosine_similarity(sim_scores):
-    return np.mean(sim_scores)
+        precision = tp / len(pred_items) if pred_items else 0
+        recall = tp / len(true_items) if true_items else 0
 
-# Ambil 10 judul random dari 10.000 data pertama
-titles = df2.iloc[:10000]['name'].dropna().sample(10, random_state=42).str.lower().tolist()
-precision_scores = []
-mean_cosine_scores = []
+        precisions.append(precision)
+        recalls.append(recall)
 
-for title in titles:
-    recommended_df, sim_scores = get_content_recommendations(title, cosine_sim, df_cb, indices)
+    avg_precision = sum(precisions) / len(precisions) if precisions else 0
+    avg_recall = sum(recalls) / len(recalls) if recalls else 0
+    return avg_precision, avg_recall
 
-    precision_cbf = precision_at_k_cbf(title, recommended_df, df_cb, k=10)
-    precision_scores.append(precision_cbf)
-
-    mean_sim = mean_cosine_similarity(sim_scores)
-    mean_cosine_scores.append(mean_sim)
-
-    print(f"Precision@10 (CBF) ({title}): {precision_cbf:.2f}")
-    print(f"Mean Cosine Similarity ({title}): {mean_sim:.2f}\n")
-
-# Hitung rata-rata precision dan mean cosine similarity
-mean_precision = np.mean(precision_scores)
-mean_cosine = np.mean(mean_cosine_scores)
-
-print(f"Rata-rata Precision@10 (CBF): {mean_precision:.2f}")
-print(f"Rata-rata Mean Cosine Similarity: {mean_cosine:.2f}")
-
-"""**Hasil:**
-- `Precision@10: 0.74` artinya dari 10 game yang direkomendasikan memiliki fitur yang 74% relevan (setidaknya 3 fitur sama) dari rata-rata 10 sample random.
-- `Mean Cosine Similarity: 0.61` Rata-rata kemiripan konten (TF-IDF) antara game input dan 10 rekomendasinya adalah 61% dari rata-rata 10 sample random.
-
-### CF
+"""### Content-Based Filtering (CBF)
+Evaluasi dengan precision & recall
 """
 
-# Evaluasi RMSE
-predictions = algo.test(testset)
-accuracy.rmse(predictions)
+precision_cbf, recall_cbf = evaluate_precision_recall(predictions_cbf, test_ground_truth) # bandingkan hasil prediksi dan target
+print("Predictions:", predictions_cbf)
+print("Ground Truth:", test_ground_truth)
+print(f"Precision (CBF): {precision_cbf:.4f}, Recall (CBF): {recall_cbf:.4f}")
 
-"""Rata-rata kesalahan prediksi model hanya sekitar 2.33 poin atau 23% (skala 0-10) terhadap rating aslinya.
+"""**Interpretasi:**
+- `Precision = 0.0221 (≈ 2.21%)` Dari seluruh buku yang direkomendasikan, hanya 2.21% yang benar-benar disukai oleh user.
+- `Recall = 0.0632 (≈ 6.32%)` Dari semua buku yang seharusnya direkomendasikan (user_liked_books), hanya 6.32% yang berhasil diprediksi.
+- Precision tinggi → model merekomendasikan buku yang benar-benar disukai pengguna.
+- Recall tinggi → model berhasil menangkap sebagian besar buku yang disukai pengguna.
+- Jika kedua nilai rendah, kemungkinan:
+ - Deskripsi buku tidak cukup informatif.
+ - Kesamaan konten (TF-IDF) tidak mencerminkan preferensi pengguna.
+ - Perlu pendekatan lain: collaborative filtering, matrix factorization, dll.
 
-CF memberikan prediksi rating. Maka Precision@k dihitung dari berapa banyak item yang direkomendasikan memiliki rating aktual di atas ambang batas, misalnya rating ≥ 4.
+### Collaborative Filtering (CF)
+Evaluasi precision dan recall
 """
 
-def precision_at_k_cf(predictions, k=10, threshold=4.0):
-    # Kelompokkan prediksi berdasarkan user
-    top_k = defaultdict(list)
-    for uid, iid, true_r, est, _ in predictions:
-        top_k[uid].append((iid, est))
+precision_cf, recall_cf = evaluate_precision_recall(predictions_cf, test_ground_truth) # bandingkan hasil prediksi dan target
+print("Predictions:", predictions_cf)
+print("Ground Truth:", test_ground_truth)
+print(f"Precision (CF): {precision_cf:.4f}, Recall (CF): {recall_cf:.4f}")
 
-    # Ambil top-k prediksi tertinggi untuk setiap user
-    for uid, user_ratings in top_k.items():
-        user_ratings.sort(key=lambda x: x[1], reverse=True)
-        top_k[uid] = user_ratings[:k]
+"""**Inferensi:**
+- `Precision = 0.0128 (~1.28%)` Dari seluruh rekomendasi yang diberikan oleh model ke pengguna, hanya 1.28% yang benar-benar sesuai dengan selera mereka (buku dengan rating tertinggi).
+- `Recall = 0.0367 (~3.67%)` Dari semua buku favorit (yang pengguna beri rating tertinggi), hanya 3.67% yang berhasil direkomendasikan oleh model.
 
-    # Hitung Precision@k
-    precisions = []
-    for uid, user_ratings in top_k.items():
-        n_relevant = sum((est >= threshold) for (_, est) in user_ratings)
-        precisions.append(n_relevant / k)
+### Kesimpulan
 
-    return sum(precisions) / len(precisions)
+| Model                     | Precision | Recall  |
+|--------------------------|-----------|---------|
+| Content-Based Filtering  | 0.0221    | 0.0632  |
+| Collaborative Filtering  | 0.0128    | 0.0367  |
 
-# Hitung precision@10
-precision_cf = precision_at_k_cf(predictions)
-print(f"Precision@10 (CF): {precision_cf:.2f}")
+- CBF unggul dalam precision dan recall dibandingkan CF.
+- CBF lebih baik dalam merekomendasikan buku yang benar-benar disukai (rating tinggi).
+- Namun, kedua model masih memiliki akurasi rendah secara keseluruhan, yang menunjukkan perlunya peningkatan atau pendekatan hybrid.
 
-"""## Deployment (Test Inferensi)"""
+### Contoh Output per User
+Mengambil data user random dan kedua model akan mengembalikan list Rekomendasi nya masing masing.
+"""
 
-# CBF
-def recommend_game(game_title, n=5):
-    game_title = game_title.lower()
-
-    if game_title not in indices:
-        return f"Game '{game_title}' tidak ditemukan dalam dataset."
-
-    idx = indices[game_title]
-    sim_scores = list(enumerate(cosine_sim[idx]))
-    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:n+1]
-
-    recommended_games = [df.iloc[i[0]]['name'] for i in sim_scores]
-    print(f"\nTop 5 rekomendasi game serupa '{game_title}':")
-    return recommended_games
-
-display(recommend_game('Dota 2'))
-
-# CF
-def recommend_for_user(user_id, algo, df_games, top_n=5):
-    played = df_cf[df_cf['user_id'] == user_id]['name'].tolist()
-    all_games = df_games['name'].unique()
-    unseen = [g for g in all_games if g not in played]
-
-    predictions = [(game, algo.predict(user_id, game).est) for game in unseen]
-    top_recommendations = sorted(predictions, key=lambda x: x[1], reverse=True)[:top_n]
-
-    print(f"\nTop {top_n} rekomendasi game yang cocok dengan user '{user_id}':")
-    return pd.DataFrame(top_recommendations, columns=['Game', 'Predicted Rating'])
-
-recommend_for_user('action_indie', algo, df2)
+sample_user = random.choice(list(test_ground_truth.keys()))
+print(f"\nUser: {sample_user}")
+print(f"Ground Truth (buku paling disukai): {test_ground_truth[sample_user]}")
+print(f"Rekomendasi Top-10 (CBF): {predictions_cbf.get(sample_user, [])}")
+print(f"Rekomendasi Top-10 (CF): {predictions_cf.get(sample_user, [])}")
