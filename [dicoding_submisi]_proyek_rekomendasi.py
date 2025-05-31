@@ -9,6 +9,9 @@ Original file is located at
 # Laporan Proyek Machine Learning - Leo Prangs Tobing
 """
 
+# from google.colab import drive
+# drive.mount('/content/drive')
+
 """## Project Overview
 
 **Latar Belakang:**
@@ -52,7 +55,8 @@ Dua pendekatan umum yang sering digunakan dalam pengembangan sistem rekomendasi 
 Siapkan semua library yang diperlukan proyek & load dataset. Dataset yang digunakan adalah **Book-Crossing: User review ratings** dari [Kaggle](https://www.kaggle.com/datasets/ruchi798/bookcrossing-dataset), dengan file yang digunakan adalah `Preprocessed_data.csv` (kombinasi informasi user, buku dan rating)
 """
 
-# # Install depedensi yang sesuai dengan Google Colab (lingkunan notebook proyek) setelah selesai, restart ulang sesi
+# # buka block kode ini, downgrage numpy==2.0.2 jadi versi yang kompatible dgn lingkunan scikit-suprise di GColab
+# # restar ulang sesi, lalu comment kembali kode setelah selesai
 # !pip install numpy==1.24.4 --force-reinstall
 
 # !pip install -qq scikit-surprise==1.1.4
@@ -118,19 +122,21 @@ Beberapa analisis yang punya insight penting
 
 # Melihat jumlah user dan jumlah buku
 print(f"{df['user_id'].nunique()} user, {df['isbn'].nunique()} buku")
-
+print('\n---------- Change DType ---------')
 display(df.info())
-
-print('df.isna().sum():\n',df.isna().sum())
-
-display('df.describe().T: ',df.describe().T)
-
 display(df[df['age'] == 5].head(3))
 display(df[df['year_of_publication'] == 1376])
 
+print('\n--------- Null Values ---------')
+print('df.isna().sum():\n',df.isna().sum())
+
+print('\n--------- Outliers ---------')
+display('df.describe().T: ',df.describe().T)
+
+
+print('\n--------- Invalid Values ---------')
 for col in ['age', 'Language', 'Category']: # kolom kategori atau ordinal yang perlu diperiksa
     print(f"{col}: {df[col].unique().tolist()}")
-
 display(df[df['Summary'] == '9'].head(3))
 
 """**Insight:**
@@ -138,11 +144,11 @@ display(df[df['Summary'] == '9'].head(3))
 - **change Dtype:** `age` & `year_of_publication` dapat diubah ke **int**
 - **null value:** `book_author` = 1, `city` = 14k, `state` = 22k, `country` = 35k
 - **number distribution:**
- - **outliers**: `age` diusia 5 untuk rata-rata pembaca usia 36 tahun, dan `year_of_publication` yang punya tahun 1376 untuk rata rata tahun 1995.
- - 50% data `rating` bernilai 0, mungkin karena: Rating default (belum memberikan penilaian) atau pengguna tidak suka bukunya.
+  - **outliers**: `age` diusia 5 untuk rata-rata pembaca usia 36 tahun, dan `year_of_publication` yang punya tahun 1376 untuk rata rata tahun 1995.
+  - 50% data `rating` bernilai 0, mungkin karena: Rating default (belum memberikan penilaian) atau pengguna tidak suka bukunya.
 - **Invalid Value**:
- - nilai `34.74389988072476` pade `age` perlu dibulatkan
- - nilai `9` pada `Summary`, `Language`, dan `Category` bisa berarti placeholder untuk metadata buku yang tidak perlu ditampilkan kembali setelah kemunculan pertama
+  - nilai `34.74389988072476` pade `age` perlu dibulatkan
+  - nilai `9` pada `Summary`, `Language`, dan `Category` bisa berarti placeholder untuk metadata buku yang tidak perlu ditampilkan kembali setelah kemunculan pertama
 
 Catatan: Hasil insight hanya untuk pemahaman umum, berguna atau tidak tergantung apakah kolom dipakai untuk modelling.
 
@@ -171,7 +177,7 @@ df2['Category'] = df2['Category'].replace('9', '', regex=False)
 
 df2.shape
 
-"""Walau dapat dipakai untuk model CB, Kolom `Summary` dihapus karena dapat menimbulkan noise.
+"""Walau dapat dipakai untuk model CBF, Kolom `Summary` dihapus karena dapat menimbulkan noise.
 
 ### Sampling
 Ambil irisan dari masing-masing top 500 User dan Buku (untuk performa).

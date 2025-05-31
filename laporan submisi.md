@@ -77,11 +77,11 @@ Beberapa analisis yang punya insight penting:
 - **number distribution:**
   - **outliers**: `age` diusia 5 untuk rata-rata pembaca usia 36 tahun, dan `year_of_publication` yang punya tahun 1376 untuk rata rata tahun 1995.
   - 50% data `rating` bernilai 0, mungkin karena: Rating default (belum memberikan penilaian) atau pengguna tidak suka bukunya.
-- **Invalid Value:**
+- **Invalid Value**:
   - nilai `34.74389988072476` pade `age` perlu dibulatkan
   - nilai `9` pada `Summary`, `Language`, dan `Category` bisa berarti placeholder untuk metadata buku yang tidak perlu ditampilkan kembali setelah kemunculan pertama
 
-**Catatan**: Hasil insight hanya untuk pemahaman umum, berguna atau tidak tergantung apakah kolom dipakai untuk modelling.
+Catatan: Hasil insight hanya untuk pemahaman umum, berguna atau tidak tergantung apakah kolom dipakai untuk modelling.
 
 ---
 
