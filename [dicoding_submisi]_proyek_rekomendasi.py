@@ -12,43 +12,7 @@ Original file is located at
 # from google.colab import drive
 # drive.mount('/content/drive')
 
-"""## Project Overview
-
-**Latar Belakang:**
-
-Dalam era digital, jumlah buku yang tersedia secara daring terus meningkat dengan sangat pesat. Platform-platform seperti Amazon, Goodreads, atau sistem perpustakaan digital menyediakan katalog buku yang sangat luas, yang justru dapat menyulitkan pembaca dalam menemukan buku yang sesuai dengan preferensi atau minat mereka. Hal ini menciptakan kebutuhan akan sistem rekomendasi yang cerdas untuk membantu pengguna menavigasi pilihan yang sangat banyak.
-
-Sistem rekomendasi telah menjadi komponen penting dalam meningkatkan **pengalaman pengguna** dan **personalisasi** dalam berbagai platform digital, termasuk dalam industri buku. Dalam konteks ini, sistem rekomendasi dapat memberikan saran buku yang relevan berdasarkan minat pembaca, riwayat interaksi, atau penilaian (rating) mereka terhadap buku sebelumnya. Selain membantu pengguna menemukan buku yang sesuai, sistem ini juga berperan penting dalam meningkatkan **keterlibatan pengguna**, **retensi pembaca**, dan bahkan **peningkatan penjualan** atau sirkulasi buku di platform penyedia layanan.
-
-Dua pendekatan umum yang sering digunakan dalam pengembangan sistem rekomendasi adalah **Content-Based Filtering (CBF)** dan **Collaborative Filtering (CF)**. Content-Based Filtering bekerja dengan membandingkan fitur-fitur konten antar buku (seperti genre, penulis, atau kata kunci deskripsi), sedangkan Collaborative Filtering menggunakan pola interaksi pengguna lain yang memiliki preferensi serupa. Menurut Aggarwal (2016), kedua pendekatan ini merupakan dasar dari kebanyakan sistem rekomendasi modern. Di sisi lain, Jannach et al. (2010) menekankan pentingnya sistem rekomendasi dalam mendukung eksplorasi item dalam katalog besar, termasuk dalam konteks literatur atau buku.
-
-**Referensi:**
-
-- Aggarwal, C. C. (2016). *Recommender Systems: The Textbook*. Springer.
-- Jannach, D., Adomavicius, G., Tuzhilin, A., & Kantor, P. (2010). *Recommender Systems – Challenges, Insights and Research Opportunities*. ACM Transactions on Intelligent Systems and Technology (TIST), 1(1), 1–38.
-
-## Business Understanding
-
-**Problem Statements:**
-
-- Banyak pengguna kesulitan menemukan buku yang sesuai dengan minat mereka karena banyaknya pilihan.
-- Rekomendasi buku yang ditampilkan sering kali tidak dipersonalisasi berdasarkan preferensi pengguna sebelumnya.
-- Tidak adanya sistem pendukung keputusan yang membantu pengguna mengeksplorasi buku-buku baru yang relevan dengan preferensi mereka.
-
-**Project Goals:**
-
-- Mengembangkan sistem rekomendasi buku yang dapat memberikan saran bacaan personal berdasarkan data riwayat rating pengguna.
-- Membandingkan dua pendekatan sistem rekomendasi, yaitu Content-Based Filtering dan Collaborative Filtering, untuk mengevaluasi mana yang lebih efektif dalam memberikan rekomendasi yang relevan.
-- Mengukur performa model menggunakan metrik evaluasi seperti **Precision** dan **Recall** berdasarkan buku-buku yang paling disukai (rating tertinggi) oleh pengguna.
-
-**Solution Approach:**
-
-- **Content-Based Filtering (CBF):** Rekomendasi diberikan berdasarkan kesamaan konten antar buku, seperti kesamaan tag, genre, atau fitur tekstual lainnya.
-- **Collaborative Filtering (CF):** Rekomendasi dibuat berdasarkan perilaku dan pola rating dari pengguna lain yang memiliki preferensi serupa.
-- Untuk evaluasi, dilakukan split data berdasarkan buku-buku dengan rating tertinggi sebagai *ground truth*, dan sistem akan diuji apakah mampu merekomendasikan buku tersebut kembali dalam top-N hasil.
-- Metrik yang digunakan untuk mengevaluasi performa adalah **Precision** dan **Recall**, untuk mengukur seberapa relevan dan lengkap rekomendasi yang dihasilkan oleh sistem.
-
-## Data Understanding
+"""## Data Understanding
 
 ### Load Data
 
@@ -117,7 +81,7 @@ Terdapat **1.031.175 baris** data, dengan 19 kolom:
 | 19  | `country`          | Negara asal pengguna (dipecah dari kolom `location`). |
 
 ### EDA
-Beberapa analisis yang punya insight penting
+Beberapa analisis yang punya insight penting (ditampilkan di markdown setelah output kode di bawah).
 """
 
 # Melihat jumlah user dan jumlah buku
@@ -155,7 +119,7 @@ Catatan: Hasil insight hanya untuk pemahaman umum, berguna atau tidak tergantung
 ## Data Preparation
 
 ### Pembersihan
-Hapus kolom tidak berguna, ubah tipe data, handle null & ubah data invalid.
+Hapus kolom tidak berguna, ubah tipe data age & year menjadi **int**, isi null menggunakan string kosong (""), & ubah data invalid "9" menjadi string kosong ("").
 """
 
 df2 = df.copy(deep=True) # Berganti ke versi 2 (lebih bersih)
@@ -177,7 +141,8 @@ df2['Category'] = df2['Category'].replace('9', '', regex=False)
 
 df2.shape
 
-"""Walau dapat dipakai untuk model CBF, Kolom `Summary` dihapus karena dapat menimbulkan noise.
+"""- `df2` digunakan untuk preprocessing 2 model selanjutnya yang berdasarkan unik book (`df_book`) untuk model CBF, data unik relasi user-book-rating (`train_df_cf`) untuk model CF, dan `test_ground_truth` untuk evaluasi.
+- Walau dapat dipakai untuk model CBF, Kolom `Summary` dihapus karena dapat menimbulkan noise.
 
 ### Sampling
 Ambil irisan dari masing-masing top 500 User dan Buku (untuk performa).
@@ -207,8 +172,8 @@ df2.shape
 
 ### Pembuatan Data untuk Model
 
-#### `df_book` (CBF)
-Versi unik buku + combined_features (gabungan title, author, publisher, language, category) untuk CBF.
+#### CBF: `df_book`, `tfidf_matrix`, `isbn_to_index` & `index_to_isbn`
+Versi unik buku + combined_features (gabungan title, author, publisher, language, category) untuk CBF. Setiap fitur penting digabung karena TF-IDF Butuh Representasi Teks Tunggal. `df_book` dipakai juga saat menampilkan Top-N rekomendasi
 """
 
 df_book = df2.copy(deep=True)
@@ -229,7 +194,34 @@ df_book = df_book[['isbn', 'book_title', 'combined_features']].reset_index(drop=
 print(df_book.shape)
 df_book.sample(10)
 
-"""- Setiap fitur penting digabung karena TF-IDF Butuh Representasi Teks Tunggal
+"""**Proses setelah fitur digabung jadi 1 kalimat:**
+- Membandingkan kemiripan antar buku berdasarkan konten atau metadata-nya. Caranya? Fitur-fitur dalam string (`combined_features`)  ditransformasikan ke dalam bentuk vektor menggunakan **TF-IDF (Term Frequency - Inverse Document Frequency)**. TF-IDF mengubah kumpulan teks menjadi representasi vektor numerik yang menekankan kata-kata penting dan khas, lalu digunakan untuk mengukur kemiripan antar dokumen.
+- **Hasilnya:** Didapatkan matriks TF-IDF dengan ukuran 500 ✖ 230
+"""
+
+# TF-IDF Vectorizer
+tfidf = TfidfVectorizer(stop_words='english')
+
+# Transformasikan ke bentuk numerik
+tfidf_matrix = tfidf.fit_transform(df_book['combined_features'])
+
+# Ukuran matriks (baris: isbn, kolom: kata unik dari combined_features)
+print(f"TF-IDF matrix shape: {tfidf_matrix.shape}")
+
+# Contoh kata-kata (fitur) yang dihasilkan
+feature_names = tfidf.get_feature_names_out()
+print(f"Contoh fitur: {feature_names[:20]}")
+
+"""Membuat index `isbn_to_index` dan `index_to_isbn`: digunakan untuk menjembatani antara format ISBN (string) dan posisi data dalam matriks TF-IDF (indeks numerik) sehingga memungkinkan pencarian dan interpretasi kemiripan antar buku."""
+
+isbn_to_index = {isbn: idx for idx, isbn in enumerate(df_book['isbn'])}
+index_to_isbn = {v: k for k, v in isbn_to_index.items()}
+print(isbn_to_index)
+print(index_to_isbn)
+
+"""**Kenapa Diperlukan:**
+- Matriks `tfidf_matrix` adalah array numerik (baris ke-0, ke-1, dst.).
+- Untuk mencari cosine similarity antar buku, perlu tahu indeks baris dari sebuah ISBN.
 
 #### `train_data` & `test_ground_truth`
 - Buat ground truth: Ambil hanya buku dengan rating >= 5.
@@ -271,11 +263,15 @@ for user, books in user_liked_books.items():
 
 print(user_liked_books)
 
+"""`test_ground_truth` menunjukkan data kebenaran (buku yang seharusnya disukai/dibaca oleh pengguna di data uji. Jika kita lihat hasilnya"""
+
 print(train_data[:5])
 print(test_ground_truth)
 
-"""#### `train_df_cf` (CF)
-- Digunakan untuk model Collaborative Filtering.
+"""Hasil memperlihatkan target `test_ground_truth` memiliki jumlah bervariasi karena diambil dari list kelompok buku dengan rating tertinggi
+
+#### `trainset_surp_cf` (CF)
+- Dibuat menggunakan `train_data`, yang kemudian dipakai untuk melatih model Collaborative Filtering.
 - Model CF yang menggunakan pola user book dari user lain yang serupa (dari train data) dan merekomendasikannya, hasilnya akan dievaluasi dengan data testing.
 """
 
@@ -283,33 +279,31 @@ print(test_ground_truth)
 train_df_cf = pd.DataFrame(train_data, columns=["user_id", "isbn"])
 train_df_cf["rating"] = 5  # Karena semua data ini adalah rating >= 5 (menyederhanakan model)
 
-"""## Modelling
+"""**Dengan memberikan rating 5:**
+- Dianggap bahwa setiap interaksi adalah positif (user menyukai buku tersebut).
+- Ini umum dalam skenario implicit feedback, untuk mensimulasikan preferensi tinggi.
 
-### Content-Based Filtering (CBF)
-
-- Membandingkan kemiripan antar buku berdasarkan konten atau metadata-nya.
-- Fitur-fitur dalam string (`combined_features`)  ditransformasikan ke dalam bentuk vektor menggunakan **TF-IDF (Term Frequency - Inverse Document Frequency)**.
-- Kemiripan antar buku dihitung menggunakan **cosine similarity** antar vektor.
+**Proses:** Data diubah ke format surprise dengan skala rating 1–5 agar bisa digunakan untuk pelatihan model rekomendasi.
 """
 
-# TF-IDF Vectorizer
-tfidf = TfidfVectorizer(stop_words='english')
+# Buat dataset surprise
+reader = Reader(rating_scale=(1, 5)) # memberi tahu bahwa semua rating berada pada skala 1 hingga 5
+train_data_surp = Dataset.load_from_df(train_df_cf[["user_id", "isbn", "rating"]], reader) # menjadi objek dataset yang bisa digunakan oleh library surprise
+trainset_surp_cf = train_data_surp.build_full_trainset() # trainset adalah objek yang berisi semua data pelatihan yang siap digunakan oleh algoritma surprise
 
-# Transformasikan ke bentuk numerik
-tfidf_matrix = tfidf.fit_transform(df_book['combined_features'])
+"""**Hasil:** Dihasilkan trainset siap pakai untuk model CF (seperti SVD).
 
-# Ukuran matriks (baris: isbn, kolom: kata unik dari combined_features)
-print(f"TF-IDF matrix shape: {tfidf_matrix.shape}")
+## Modelling
 
-# Contoh kata-kata (fitur) yang dihasilkan
-feature_names = tfidf.get_feature_names_out()
-print(f"Contoh fitur: {feature_names[:20]}")
-
-"""- Didapatkan matriks TF-IDF dengan ukuran 500 ✖ 230"""
-
-# --- Mapping ISBN ke indeks yang dipakai dalam model tf-idf matrix ---
-isbn_to_index = {isbn: idx for idx, isbn in enumerate(df_book['isbn'])}
-index_to_isbn = {v: k for k, v in isbn_to_index.items()}
+### Content-Based Filtering (CBF)
+Membuat sistem CBF untuk merekomendasikan buku berdasarkan kemiripan konten (TF-IDF) dari buku-buku yang pernah disukai oleh pengguna. Caranya:
+- Menggunakan Cosine Similarity untuk mengukur kemiripan arah antara dua vektor dalam ruang vektor, dengan nilai berkisar dari -1 hingga 1
+- Ambil semua buku yang disukai,
+- Untuk setiap buku, ambil 5 buku paling mirip,
+- Gabungkan semua rekomendasi dari buku-buku yang disukai pengguna,
+- Gunakan dict.fromkeys untuk menghapus duplikat sambil mempertahankan urutan,
+- Ambil hanya 10 buku teratas sebagai hasil akhir.
+"""
 
 def get_similar_books(isbn, top_n=10):
     if isbn not in isbn_to_index:
@@ -336,25 +330,31 @@ for user, liked_books in user_liked_books.items():
 print("predictions_cbf (CBF):", predictions_cbf)
 print("Target Ground Truth:", test_ground_truth)
 
-"""Prediction kedua model dan Target Ground Truth akan dibandingkan untuk mendapatkan skor evaluasi
+"""- `predictions_cbf` Ini adalah top-10 daftar ISBN buku yang direkomendasikan untuk tiap pengguna, berdasarkan konten buku yang mirip dengan yang pernah disukai.
+- Hasil Prediction model CBF dan Target Ground Truth akan dibandingkan untuk mendapatkan skor evaluasi
 
 ### Collaborative Filtering (CF) – SVD
 - Berdasarkan pola rating yang diberikan oleh pengguna lain.
-- Menggunakan **SVD (Singular Value Decomposition)** dari library `surprise` untuk memfaktorkan matriks user-item menjadi representasi laten.
-- Model belajar dari `train_df_cf` (interaksi user-book dengan rating 5).
-
-Dengan trainset yang sudah disiapkan matriks (user, book, rating), metode Singular Value Decomposition dapat dilakukan.
+- Menggunakan **SVD (Singular Value Decomposition)** dari library `surprise` untuk memfaktorkan matriks user-item menjadi representasi laten. Cara Kerjanya:
+ - SVD adalah teknik dari aljabar linier untuk memfaktorkan matriks menjadi:
+ $$
+  R \approx U \cdot \Sigma \cdot V^T
+  $$
+  - `R`: matriks user-item (rating), `U`: representasi pengguna dalam ruang laten, `V`: representasi item (buku) dalam ruang laten, `Σ`: bobot (singular values).
+  - Tidak peduli isi/konten buku → murni berdasarkan pola interaksi. Contoh: "User A menyukai buku X dan Y, maka kemungkinan besar juga akan suka Z."
 """
 
-# Buat dataset surprise
-reader = Reader(rating_scale=(1, 5)) # memberi tahu bahwa semua rating berada pada skala 1 hingga 5
-train_data_surp = Dataset.load_from_df(train_df_cf[["user_id", "isbn", "rating"]], reader) # menjadi objek dataset yang bisa digunakan oleh library surprise
-trainset = train_data_surp.build_full_trainset() # trainset adalah objek yang berisi semua data pelatihan yang siap digunakan oleh algoritma surprise
-
 model_cf = SVD()
-model_cf.fit(trainset)
+model_cf.fit(trainset_surp_cf)
 
-def get_top_n(model, trainset, all_isbns, users, n=10):
+"""**Hasil:** Proses ini menghasilkan model Collaborative Filtering berbasis SVD yang telah siap digunakan untuk memberikan prediksi rating dan rekomendasi buku, meskipun data awal hanya berupa interaksi (tanpa rating eksplisit).
+
+**Penjelasan Kode dibawah:**
+- **Bangun Rekomendasi untuk tiap user**
+- Tujuan Fungsi `get_top_n_cf(...)` Membuat sistem rekomendasi berbasis Collaborative Filtering (CF) menggunakan model SVD untuk memprediksi top-N buku yang mungkin disukai oleh setiap user.
+"""
+
+def get_top_n_cf(model, trainset, all_isbns, users, n=10):
     top_n = defaultdict(list)
 
     for user in users:
@@ -378,11 +378,13 @@ all_isbns = df2["isbn"].unique()
 users_to_eval = list(test_ground_truth.keys())
 
 # Buat prediksi rekomendasi
-predictions_cf = get_top_n(model_cf, trainset, all_isbns, users_to_eval, n=10)
+predictions_cf = get_top_n_cf(model_cf, trainset_surp_cf, all_isbns, users_to_eval, n=10)
 print("Predictions (CF): ", predictions_cf)
 print("Target Ground Truth:", test_ground_truth)
 
-"""## Evaluation
+"""**Hasil:** `predictions_cf`: berisi top-10 rekomendasi buku untuk tiap pengguna berdasarkan model CF. Rekomendasi akan dibandingkan dengan `test_ground_truth` untuk dapat skor evaluasi.
+
+## Evaluation
 
 ### Metrik Precision & Recall
 """
@@ -437,26 +439,62 @@ print("Ground Truth:", test_ground_truth)
 print(f"Precision (CF): {precision_cf:.4f}, Recall (CF): {recall_cf:.4f}")
 
 """**Inferensi:**
-- `Precision = 0.0128 (~1.28%)` Dari seluruh rekomendasi yang diberikan oleh model ke pengguna, hanya 1.28% yang benar-benar sesuai dengan selera mereka (buku dengan rating tertinggi).
+- `Precision = 0.0114 (~1.14%)` Dari seluruh rekomendasi yang diberikan oleh model ke pengguna, hanya 1.28% yang benar-benar sesuai dengan selera mereka (buku dengan rating tertinggi).
 - `Recall = 0.0367 (~3.67%)` Dari semua buku favorit (yang pengguna beri rating tertinggi), hanya 3.67% yang berhasil direkomendasikan oleh model.
 
-### Kesimpulan
+### Perbandingan Hasil Metrik
 
 | Model                     | Precision | Recall  |
 |--------------------------|-----------|---------|
 | Content-Based Filtering  | 0.0221    | 0.0632  |
-| Collaborative Filtering  | 0.0128    | 0.0367  |
+| Collaborative Filtering  | 0.0114    | 0.0367  |
 
 - CBF unggul dalam precision dan recall dibandingkan CF.
 - CBF lebih baik dalam merekomendasikan buku yang benar-benar disukai (rating tinggi).
 - Namun, kedua model masih memiliki akurasi rendah secara keseluruhan, yang menunjukkan perlunya peningkatan atau pendekatan hybrid.
 
-### Contoh Output per User
-Mengambil data user random dan kedua model akan mengembalikan list Rekomendasi nya masing masing.
+### Too-10 Rekomendasi
+Mengambil data user random dan kedua model akan mengembalikan 10 Rekomendasi terbaik bukunya masing masing. Penjelasan Kode:
+- `df_book[df_book['isbn'].isin(cbf_isbns)]` mengambil baris yang ISBN-nya ada dalam daftar rekomendasi. Hal yang sama unutk CF
+- `.loc[cbf_isbns]` menjaga urutan sesuai urutan rekomendasi. Hal yang sama unutk CF
+- Ditampilkan dalam format tabel dengan kolom isbn dan book_title.
 """
 
-sample_user = random.choice(list(test_ground_truth.keys()))
+# Pilih satu user secara acak dari test_ground_truth
+# sample_user = random.choice(list(test_ground_truth.keys())) # Versi random
+sample_user = 261105
+user_gt_isbns = test_ground_truth[sample_user]
+
+# Ambil judul buku berdasarkan ISBN
+gt_titles = df_book[df_book['isbn'].isin(user_gt_isbns)][['isbn', 'book_title']]
+
+# Tampilkan hasil
 print(f"\nUser: {sample_user}")
-print(f"Ground Truth (buku paling disukai): {test_ground_truth[sample_user]}")
-print(f"Rekomendasi Top-10 (CBF): {predictions_cbf.get(sample_user, [])}")
-print(f"Rekomendasi Top-10 (CF): {predictions_cf.get(sample_user, [])}")
+print(f"Ground Truth (buku paling disukai):")
+display(gt_titles.reset_index(drop=True))
+
+# Ambil daftar ISBN rekomendasi
+cbf_isbns = predictions_cbf.get(sample_user, [])
+cf_isbns = predictions_cf.get(sample_user, [])
+
+# Buat DataFrame hasil rekomendasi untuk CBF
+cbf_df = df_book[df_book['isbn'].isin(cbf_isbns)][['isbn', 'book_title']]
+cbf_df = cbf_df.set_index('isbn').loc[cbf_isbns].reset_index()
+print("\nTop-10 Rekomendasi (Content-Based Filtering):")
+display(cbf_df)
+
+# Buat DataFrame hasil rekomendasi untuk CF
+cf_df = df_book[df_book['isbn'].isin(cf_isbns)][['isbn', 'book_title']]
+cf_df = cf_df.set_index('isbn').loc[cf_isbns].reset_index()
+print("\nTop-10 Rekomendasi (Collaborative Filtering):")
+display(cf_df)
+
+"""Hasilnya:
+- User: 261105
+- Buku yang disukai (Ground Truth): '0345337662' → *Interview with the Vampire*
+- CBF cenderung merekomendasikan buku dengan kemiripan deskriptif terhadap buku favorit user.
+- CF memberikan buku yang disukai oleh pengguna lain dengan preferensi yang mirip, sehingga hasil lebih beragam secara konten.
+- Beberapa buku seperti The Testament muncul di kedua sistem, menandakan bahwa buku itu relevan secara konten dan populer di kalangan pengguna serupa.
+
+
+"""

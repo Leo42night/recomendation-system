@@ -102,9 +102,10 @@ Catatan:
 
 ### Pembuatan Data untuk Model
 - `df_book`: Untuk model CBF, diperlukan fitur teks gabungan dari beberapa atribut buku:[`book_title`, `book_author`, `publisher`, `Language`, dan `Category`]
-
-- `train_data` dan `test_ground_truth`: berdasarkan buku dengan rating ≥ 5, test = semua buku dengan rating tertinggi user. Nilai train digunakan untuk rekomendasi model CBF dan CF, kemudian diuji menggunakan data `testing`. 
-- `train_df_cf`: buat Dataframe dari `train_data`, atur semua rating = 5 (karena semua data ini adalah rating >= 5, untuk menyederhanakan model), Digunakan untuk model Collaborative Filtering
+- `tfidf_matrix`: TF-IDF mengubah kumpulan teks menjadi representasi vektor numerik yang menekankan kata-kata penting dan khas, lalu digunakan untuk mengukur kemiripan antar dokumen. Didapatkan matriks TF-IDF dengan ukuran 500 ✖ 230
+- `isbn_to_index` & `index_to_isbn`: Digunakan untuk menjembatani antara format ISBN (string) dan posisi data dalam matriks TF-IDF (indeks numerik) sehingga memungkinkan pencarian dan interpretasi kemiripan antar buku. Karena untuk mencari cosine similarity antar buku, perlu tahu indeks baris dari sebuah ISBN.
+- `train_data` & `test_ground_truth`: berdasarkan buku dengan rating ≥ 5, test = semua buku dengan rating tertinggi user. Nilai train digunakan untuk rekomendasi model CBF dan CF, kemudian diuji menggunakan data `testing`. 
+- `trainset_surp_cf`: Dari `train_data` jadi `train_df_cf` kemudian jadi `trainset_surp_cf`, atur semua rating = 5 (karena semua data ini adalah rating >= 5, untuk menyederhanakan model). Data diubah ke format surprise dengan skala rating 1–5 agar bisa digunakan untuk pelatihan model rekomendasi CF.
 
 ---
 
@@ -117,28 +118,13 @@ Dalam tahap ini, dua model sistem rekomendasi dibangun dan dilatih:
 
 #### Pendekatan:
 - Membandingkan kemiripan antar buku berdasarkan konten atau metadata-nya.
-- Fitur-fitur dalam string (`combined_features`)  ditransformasikan ke dalam bentuk vektor menggunakan **TF-IDF (Term Frequency - Inverse Document Frequency)**.
+- Fitur-fitur dalam string (`combined_features`)  ditransformasikan ke dalam bentuk vektor menggunakan **TF-IDF (Term Frequency - Inverse Document Frequency)** `tfidf_matrix`.
 - Kemiripan antar buku dari `train_data` dihitung menggunakan **cosine similarity** antar vektor.
+- `isbn_to_index` & `index_to_isbn` digunakan untuk menghubungkan ISBN (identitas buku) dengan indeks baris dalam tfidf_matrix
 
 #### Langkah Implementasi:
 
-1. **Vectorisasi Fitur Buku**
-
-   ```python
-   tfidf = TfidfVectorizer(stop_words='english')
-   tfidf_matrix = tfidf.fit_transform(df_book['combined_features'])
-   ```
-
-   * Hasil: matriks `TF-IDF` berukuran `[jumlah buku, jumlah kata unik]`
-
-2. **Buat Peta ISBN ↔ Indeks TF-IDF**
-
-   ```python
-   isbn_to_index = {isbn: idx for idx, isbn in enumerate(df_book['isbn'])}
-   index_to_isbn = {v: k for k, v in isbn_to_index.items()}
-   ```
-
-3. **Fungsi Rekomendasi berdasarkan Kemiripan Buku**
+1. **Fungsi Rekomendasi berdasarkan Kemiripan Buku**
 
    ```python
    def get_similar_books(isbn, top_n=10):
@@ -148,7 +134,7 @@ Dalam tahap ini, dua model sistem rekomendasi dibangun dan dilatih:
        return [index_to_isbn[i] for i in similar_indices]
    ```
 
-4. **Prediksi Buku untuk Tiap User**
+2. **Prediksi Buku untuk Tiap User**
 
    * Ambil buku-buku yang disukai user (`train_data`)
    * Untuk setiap buku, cari buku-buku mirip
@@ -169,28 +155,19 @@ Dalam tahap ini, dua model sistem rekomendasi dibangun dan dilatih:
 
 - Berdasarkan pola rating yang diberikan oleh pengguna lain.
 - Menggunakan **SVD (Singular Value Decomposition)** dari library `surprise` untuk memfaktorkan matriks user-item menjadi representasi laten.
-- Model belajar dari `train_df_cf` (interaksi user-book dengan rating 5).
+- Model belajar dari `train_df_cf` (interaksi user-book dengan rating 5), yang diubah ke format surprise (`trainset_surp_cf`) dengan skala rating 1–5 agar bisa digunakan untuk pelatihan model.
 
 #### Langkah Implementasi:
 
-1. **Buat Dataset untuk `surprise`**
-
-   ```python
-   from surprise import Dataset, Reader
-   reader = Reader(rating_scale=(1, 5))
-   train_data_surp = Dataset.load_from_df(train_df_cf[["user_id", "isbn", "rating"]], reader)
-   trainset = train_data_surp.build_full_trainset()
-   ```
-
-2. **Latih Model SVD**
+1. **Latih Model SVD**
 
    ```python
    from surprise import SVD
    model_cf = SVD()
-   model_cf.fit(trainset)
+   model_cf.fit(trainset_surp_cf)
    ```
 
-3. **Fungsi Rekomendasi untuk Tiap User**
+2. **Fungsi Rekomendasi untuk Tiap User**
 
    * Cari semua ISBN yang belum pernah dibaca user.
    * Prediksi rating untuk semua ISBN tersebut.
@@ -208,7 +185,7 @@ Dalam tahap ini, dua model sistem rekomendasi dibangun dan dilatih:
        return top_n
    ```
 
-4. **Prediksi untuk Semua User**
+3. **Prediksi untuk Semua User**
 
    ```python
    all_isbns = df2["isbn"].unique()
@@ -290,18 +267,18 @@ precision_cf, recall_cf = evaluate_precision_recall(predictions_cf, test_ground_
 ```
 
 **Hasil:**
-- **Precision (CF): 0.0128 (≈ 1.28%)**
+- **Precision (CF): 0.0114 (≈ 1.14%)**
 - **Recall (CF): 0.0367 (≈ 3.67%)**
 - **Interpretasi:**
   - CF memiliki performa lebih rendah dibandingkan CBF.
   - Mungkin disebabkan oleh data yang sparsity (rating jarang) atau kurangnya pengguna dengan pola preferensi yang kuat.
 
-### Kesimpulan Evaluasi
+### Perbandingan Hasil Matriks
 
 | Model                   | Precision | Recall |
 | ----------------------- | --------- | ------ |
 | Content-Based Filtering | 0.0221    | 0.0632 |
-| Collaborative Filtering | 0.0128    | 0.0367 |
+| Collaborative Filtering | 0.0114    | 0.0367 |
 
 - **CBF unggul** dalam kedua metrik dibanding CF.
 - Namun, kedua model masih menghasilkan nilai metrik yang **relatif rendah secara absolut**, menunjukkan bahwa sistem rekomendasi masih dapat ditingkatkan.
@@ -311,13 +288,46 @@ precision_cf, recall_cf = evaluate_precision_recall(predictions_cf, test_ground_
   - Tambahan data interaksi atau fitur (misal: review teks, genre eksplisit, dll.)
 
 ### Contoh Output Evaluasi (per user)
+Berikut hasil yang sudah diubah ke dalam format **Markdown**:
 
-```python
-sample_user = random.choice(list(test_ground_truth.keys()))
-print(f"User: {sample_user}")
-print(f"Ground Truth: {test_ground_truth[sample_user]}")
-print(f"CBF Recommendations: {predictions_cbf.get(sample_user, [])}")
-print(f"CF Recommendations: {predictions_cf.get(sample_user, [])}")
-```
+- 👤 **User:** `261105`
+- 🎯 **Ground Truth (Buku yang Paling Disukai):**
 
-Ini memberikan insight langsung bagaimana kedua model memberikan saran dan apakah cocok dengan buku yang benar-benar disukai user.
+| ISBN       | Judul Buku                   |
+| ---------- | ---------------------------- |
+| 0345337662 | *Interview with the Vampire* |
+
+- 📘 **Top-10 Rekomendasi – Content-Based Filtering (CBF):**
+
+| ISBN       | Judul Buku                           |
+| ---------- | ------------------------------------ |
+| 0515127833 | *River's End*                        |
+| 0743227441 | *The Other Boleyn Girl*              |
+| 0380731851 | *Mystic River*                       |
+| 0316899984 | *River, Cross My Heart*              |
+| 0743203631 | *Gap Creek: The Story Of A Marriage* |
+| 044022165X | *The Rainmaker*                      |
+| 0440234743 | *The Testament*                      |
+| 0440241537 | *The King of Torts*                  |
+| 0440211727 | *A Time to Kill*                     |
+| 0440220602 | *The Chamber*                        |
+
+- 👥 **Top-10 Rekomendasi – Collaborative Filtering (CF):**
+
+| ISBN       | Judul Buku                                                  |
+| ---------- | ----------------------------------------------------------- |
+| 0440234743 | *The Testament*                                             |
+| 0452264464 | *Beloved (Plume Contemporary Fiction)*                      |
+| 0345402871 | *Airframe*                                                  |
+| 0446310786 | *To Kill a Mockingbird*                                     |
+| 0671888587 | *I'll Be Seeing You*                                        |
+| 0553582747 | *From the Corner of His Eye*                                |
+| 0440225701 | *The Street Lawyer*                                         |
+| 0140067477 | *The Tao of Pooh*                                           |
+| 0345465083 | *Seabiscuit*                                                |
+| 0679429220 | *Midnight in the Garden of Good and Evil: A Savannah Story* |
+
+**Hasilnya:**
+- CBF cenderung merekomendasikan buku dengan kemiripan deskriptif terhadap buku favorit user.
+- CF memberikan buku yang disukai oleh pengguna lain dengan preferensi yang mirip, sehingga hasil lebih beragam secara konten.
+- Beberapa buku seperti The Testament muncul di kedua sistem, menandakan bahwa buku itu relevan secara konten dan populer di kalangan pengguna serupa.
