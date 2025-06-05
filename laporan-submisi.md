@@ -102,7 +102,7 @@ Catatan:
 
 ### Pembuatan Data untuk Model
 - `df_book`: Untuk model CBF, diperlukan fitur teks gabungan dari beberapa atribut buku:[`book_title`, `book_author`, `publisher`, `Language`, dan `Category`]
-- `tfidf_matrix`: TF-IDF mengubah kumpulan teks menjadi representasi vektor numerik yang menekankan kata-kata penting dan khas, lalu digunakan untuk mengukur kemiripan antar dokumen. Didapatkan matriks TF-IDF dengan ukuran 500 ✖ 230
+- `tfidf_matrix`: TF-IDF mengubah kumpulan teks menjadi representasi vektor numerik yang menekankan kata-kata penting dan khas, lalu digunakan untuk mengukur kemiripan antar dokumen. Didapatkan matriks TF-IDF dengan ukuran 500 ✖ 1377
 - `isbn_to_index` & `index_to_isbn`: Digunakan untuk menjembatani antara format ISBN (string) dan posisi data dalam matriks TF-IDF (indeks numerik) sehingga memungkinkan pencarian dan interpretasi kemiripan antar buku. Karena untuk mencari cosine similarity antar buku, perlu tahu indeks baris dari sebuah ISBN.
 - `train_data` & `test_ground_truth`: berdasarkan buku dengan rating ≥ 5, test = semua buku dengan rating tertinggi user. Nilai train digunakan untuk rekomendasi model CBF dan CF, kemudian diuji menggunakan data `testing`. 
 - `trainset_surp_cf`: Dari `train_data` jadi `train_df_cf` kemudian jadi `trainset_surp_cf`, atur semua rating = 5 (karena semua data ini adalah rating >= 5, untuk menyederhanakan model). Data diubah ke format surprise dengan skala rating 1–5 agar bisa digunakan untuk pelatihan model rekomendasi CF.
@@ -148,6 +148,29 @@ Dalam tahap ini, dua model sistem rekomendasi dibangun dan dilatih:
            recs.extend(get_similar_books(b, top_n=5))
        predictions_cbf[user] = list(dict.fromkeys(recs))[:10]
    ```
+  
+3. **Contoh sampel**
+- 👤 **User:** `261105`
+- 🎯 **Ground Truth (Buku yang Paling Disukai):**
+
+| ISBN       | Judul Buku                   |
+| ---------- | ---------------------------- |
+| 0345337662 | *Interview with the Vampire* |
+
+- 📘 **Top-10 Rekomendasi – Content-Based Filtering (CBF):**
+
+| ISBN       | Judul Buku                           |
+| ---------- | ------------------------------------ |
+| 0515127833 | *River's End*                        |
+| 0743227441 | *The Other Boleyn Girl*              |
+| 0380731851 | *Mystic River*                       |
+| 0316899984 | *River, Cross My Heart*              |
+| 0743203631 | *Gap Creek: The Story Of A Marriage* |
+| 044022165X | *The Rainmaker*                      |
+| 0440234743 | *The Testament*                      |
+| 0440241537 | *The King of Torts*                  |
+| 0440211727 | *A Time to Kill*                     |
+| 0440220602 | *The Chamber*                        |
 
 ### Collaborative Filtering (CF) – SVD
 
@@ -156,6 +179,10 @@ Dalam tahap ini, dua model sistem rekomendasi dibangun dan dilatih:
 - Berdasarkan pola rating yang diberikan oleh pengguna lain.
 - Menggunakan **SVD (Singular Value Decomposition)** dari library `surprise` untuk memfaktorkan matriks user-item menjadi representasi laten.
 - Model belajar dari `train_df_cf` (interaksi user-book dengan rating 5), yang diubah ke format surprise (`trainset_surp_cf`) dengan skala rating 1–5 agar bisa digunakan untuk pelatihan model.
+
+**Catatan⚠️:** Setiap sesi build modelling dijalankan, hasil evaluasi CF (prediction & recall) dapat bervariasi. Alasannya: Model SVD() dari Surprise menggunakan Stochastic Gradient Descent (SGD) untuk pelatihan. SGD bersifat acak karena:
+- Inisialisasi bobot dilakukan secara acak.
+- Urutan data pelatihan dapat memengaruhi jalannya pembelajaran.
 
 #### Langkah Implementasi:
 
@@ -192,6 +219,29 @@ Dalam tahap ini, dua model sistem rekomendasi dibangun dan dilatih:
    users_to_eval = list(test_ground_truth.keys())
    predictions_cf = get_top_n(model_cf, trainset, all_isbns, users_to_eval, n=10)
    ```
+
+4. **Contoh sampel**
+- 👤 **User:** `261105`
+- 🎯 **Ground Truth (Buku yang Paling Disukai):**
+
+| ISBN       | Judul Buku                   |
+| ---------- | ---------------------------- |
+| 0345337662 | *Interview with the Vampire* |
+
+- 👥 **Top-10 Rekomendasi – Collaborative Filtering (CF):**
+
+| ISBN       | Judul Buku                                                  |
+| ---------- | ----------------------------------------------------------- |
+| 0440234743 | *The Testament*                                             |
+| 0452264464 | *Beloved (Plume Contemporary Fiction)*                      |
+| 0345402871 | *Airframe*                                                  |
+| 0446310786 | *To Kill a Mockingbird*                                     |
+| 0671888587 | *I'll Be Seeing You*                                        |
+| 0553582747 | *From the Corner of His Eye*                                |
+| 0440225701 | *The Street Lawyer*                                         |
+| 0140067477 | *The Tao of Pooh*                                           |
+| 0345465083 | *Seabiscuit*                                                |
+| 0679429220 | *Midnight in the Garden of Good and Evil: A Savannah Story* |
 
 ### Output Model
 
@@ -267,18 +317,22 @@ precision_cf, recall_cf = evaluate_precision_recall(predictions_cf, test_ground_
 ```
 
 **Hasil:**
-- **Precision (CF): 0.0114 (≈ 1.14%)**
-- **Recall (CF): 0.0367 (≈ 3.67%)**
-- **Interpretasi:**
-  - CF memiliki performa lebih rendah dibandingkan CBF.
-  - Mungkin disebabkan oleh data yang sparsity (rating jarang) atau kurangnya pengguna dengan pola preferensi yang kuat.
+- **Peringatan⚠️:** Setiap sesi build modelling dijalankan, hasil evaluasi CF (prediction & recall) dapat bervariasi. Karena pada tahap mdelling menggunakan SGD,Inisialisasi bobot dilakukan secara acak.
+- **Skor** yang pernah didapat (hasil masih dapat barubah dari ini):
+  - Precision (CF): 0.0128, Recall (CF): 0.0321
+  - Precision (CF): 0.0102, Recall (CF): 0.0298
+  - Precision (CF): 0.0114, Recall (CF): 0.0336
+  - Precision (CF): 0.0126, Recall (CF): 0.0342
+  - Precision (CF): 0.0128, Recall (CF): 0.0323
+- `Precision (CF)` Dari seluruh rekomendasi yang diberikan oleh model ke pengguna, hanya `1.02%-1.28%`(~1.15%) yang benar-benar sesuai dengan selera mereka (buku dengan rating tertinggi).
+- `Recall (CF)` Dari semua buku favorit (yang pengguna beri rating tertinggi), hanya  `2.98%-3.42%`(~3.20%) yang berhasil direkomendasikan oleh model.
 
 ### Perbandingan Hasil Matriks
 
 | Model                   | Precision | Recall |
 | ----------------------- | --------- | ------ |
 | Content-Based Filtering | 0.0221    | 0.0632 |
-| Collaborative Filtering | 0.0114    | 0.0367 |
+| Collaborative Filtering | ~0.0115   | ~0.0320|
 
 - **CBF unggul** dalam kedua metrik dibanding CF.
 - Namun, kedua model masih menghasilkan nilai metrik yang **relatif rendah secara absolut**, menunjukkan bahwa sistem rekomendasi masih dapat ditingkatkan.

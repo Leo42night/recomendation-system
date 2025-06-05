@@ -196,7 +196,6 @@ df_book.sample(10)
 
 """**Proses setelah fitur digabung jadi 1 kalimat:**
 - Membandingkan kemiripan antar buku berdasarkan konten atau metadata-nya. Caranya? Fitur-fitur dalam string (`combined_features`)  ditransformasikan ke dalam bentuk vektor menggunakan **TF-IDF (Term Frequency - Inverse Document Frequency)**. TF-IDF mengubah kumpulan teks menjadi representasi vektor numerik yang menekankan kata-kata penting dan khas, lalu digunakan untuk mengukur kemiripan antar dokumen.
-- **Hasilnya:** Didapatkan matriks TF-IDF dengan ukuran 500 ✖ 230
 """
 
 # TF-IDF Vectorizer
@@ -212,7 +211,10 @@ print(f"TF-IDF matrix shape: {tfidf_matrix.shape}")
 feature_names = tfidf.get_feature_names_out()
 print(f"Contoh fitur: {feature_names[:20]}")
 
-"""Membuat index `isbn_to_index` dan `index_to_isbn`: digunakan untuk menjembatani antara format ISBN (string) dan posisi data dalam matriks TF-IDF (indeks numerik) sehingga memungkinkan pencarian dan interpretasi kemiripan antar buku."""
+"""**Hasilnya:** Didapatkan matriks TF-IDF dengan ukuran 500 ✖ 1377
+
+Membuat index `isbn_to_index` dan `index_to_isbn`: digunakan untuk menjembatani antara format ISBN (string) dan posisi data dalam matriks TF-IDF (indeks numerik) sehingga memungkinkan pencarian dan interpretasi kemiripan antar buku.
+"""
 
 isbn_to_index = {isbn: idx for idx, isbn in enumerate(df_book['isbn'])}
 index_to_isbn = {v: k for k, v in isbn_to_index.items()}
@@ -303,6 +305,7 @@ Membuat sistem CBF untuk merekomendasikan buku berdasarkan kemiripan konten (TF-
 - Gabungkan semua rekomendasi dari buku-buku yang disukai pengguna,
 - Gunakan dict.fromkeys untuk menghapus duplikat sambil mempertahankan urutan,
 - Ambil hanya 10 buku teratas sebagai hasil akhir.
+- Terakhir, lihat sample Top-10 Recomendation
 """
 
 def get_similar_books(isbn, top_n=10):
@@ -330,8 +333,31 @@ for user, liked_books in user_liked_books.items():
 print("predictions_cbf (CBF):", predictions_cbf)
 print("Target Ground Truth:", test_ground_truth)
 
-"""- `predictions_cbf` Ini adalah top-10 daftar ISBN buku yang direkomendasikan untuk tiap pengguna, berdasarkan konten buku yang mirip dengan yang pernah disukai.
+# Top-10 Recomendation
+sample_user = 261105
+user_gt_isbns = test_ground_truth[sample_user]
+
+# Ambil judul buku berdasarkan ISBN
+gt_titles = df_book[df_book['isbn'].isin(user_gt_isbns)][['isbn', 'book_title']]
+
+# Tampilkan hasil
+print(f"\nUser: {sample_user}")
+print(f"Ground Truth (buku paling disukai):")
+display(gt_titles.reset_index(drop=True))
+
+# Ambil daftar ISBN rekomendasi
+cbf_isbns = predictions_cbf.get(sample_user, [])
+
+# Buat DataFrame hasil rekomendasi untuk CBF
+cbf_df = df_book[df_book['isbn'].isin(cbf_isbns)][['isbn', 'book_title']]
+cbf_df = cbf_df.set_index('isbn').loc[cbf_isbns].reset_index()
+print("\nTop-10 Rekomendasi (Content-Based Filtering):")
+display(cbf_df)
+
+"""**Hasil:**
+- `predictions_cbf` Ini adalah top-10 daftar ISBN buku yang direkomendasikan untuk tiap pengguna, berdasarkan konten buku yang mirip dengan yang pernah disukai.
 - Hasil Prediction model CBF dan Target Ground Truth akan dibandingkan untuk mendapatkan skor evaluasi
+- Dari hasil skema, diambil sampel contoh Top-10 rekomendasi user **261105** dengan buku favorit "Interview with the Vampire"
 
 ### Collaborative Filtering (CF) – SVD
 - Berdasarkan pola rating yang diberikan oleh pengguna lain.
@@ -342,6 +368,10 @@ print("Target Ground Truth:", test_ground_truth)
   $$
   - `R`: matriks user-item (rating), `U`: representasi pengguna dalam ruang laten, `V`: representasi item (buku) dalam ruang laten, `Σ`: bobot (singular values).
   - Tidak peduli isi/konten buku → murni berdasarkan pola interaksi. Contoh: "User A menyukai buku X dan Y, maka kemungkinan besar juga akan suka Z."
+
+**Catatan⚠️:** Setiap sesi build modelling dijalankan, hasil evaluasi CF (prediction & recall) dapat bervariasi. Alasannya: Model SVD() dari Surprise menggunakan Stochastic Gradient Descent (SGD) untuk pelatihan. SGD bersifat acak karena:
+- Inisialisasi bobot dilakukan secara acak.
+- Urutan data pelatihan dapat memengaruhi jalannya pembelajaran.
 """
 
 model_cf = SVD()
@@ -352,6 +382,7 @@ model_cf.fit(trainset_surp_cf)
 **Penjelasan Kode dibawah:**
 - **Bangun Rekomendasi untuk tiap user**
 - Tujuan Fungsi `get_top_n_cf(...)` Membuat sistem rekomendasi berbasis Collaborative Filtering (CF) menggunakan model SVD untuk memprediksi top-N buku yang mungkin disukai oleh setiap user.
+- Menampilkan sampel Top-10 rekomendasi
 """
 
 def get_top_n_cf(model, trainset, all_isbns, users, n=10):
@@ -382,7 +413,22 @@ predictions_cf = get_top_n_cf(model_cf, trainset_surp_cf, all_isbns, users_to_ev
 print("Predictions (CF): ", predictions_cf)
 print("Target Ground Truth:", test_ground_truth)
 
-"""**Hasil:** `predictions_cf`: berisi top-10 rekomendasi buku untuk tiap pengguna berdasarkan model CF. Rekomendasi akan dibandingkan dengan `test_ground_truth` untuk dapat skor evaluasi.
+# Pengujia sample user yang sama dengan Contoh di model CBF
+# Tampilkan hasil
+print(f"\nUser: {sample_user}")
+print(f"Ground Truth (buku paling disukai):")
+display(gt_titles.reset_index(drop=True))
+
+# Ambil daftar ISBN rekomendasi
+cf_isbns = predictions_cf.get(sample_user, [])
+
+# Buat DataFrame hasil rekomendasi untuk CF
+cf_df = df_book[df_book['isbn'].isin(cf_isbns)][['isbn', 'book_title']]
+cf_df = cf_df.set_index('isbn').loc[cf_isbns].reset_index()
+print("\nTop-10 Rekomendasi (Collaborative Filtering):")
+display(cf_df)
+
+"""**Hasil:** `predictions_cf`: berisi top-10 rekomendasi buku untuk tiap pengguna berdasarkan model CF. Rekomendasi akan dibandingkan dengan `test_ground_truth` untuk dapat skor evaluasi. Sampel menunjukkan perbedaan dengan hasil rekomendasi CBF
 
 ## Evaluation
 
@@ -439,15 +485,22 @@ print("Ground Truth:", test_ground_truth)
 print(f"Precision (CF): {precision_cf:.4f}, Recall (CF): {recall_cf:.4f}")
 
 """**Inferensi:**
-- `Precision = 0.0114 (~1.14%)` Dari seluruh rekomendasi yang diberikan oleh model ke pengguna, hanya 1.28% yang benar-benar sesuai dengan selera mereka (buku dengan rating tertinggi).
-- `Recall = 0.0367 (~3.67%)` Dari semua buku favorit (yang pengguna beri rating tertinggi), hanya 3.67% yang berhasil direkomendasikan oleh model.
+- **Peringatan⚠️:** Setiap sesi build modelling dijalankan, hasil evaluasi CF (prediction & recall) dapat bervariasi. Karena pada tahap mdelling menggunakan SGD,Inisialisasi bobot dilakukan secara acak.
+- Skor yang pernah didapat (hasil masih dapat barubah dari ini):
+  - Precision (CF): 0.0128, Recall (CF): 0.0321
+  - Precision (CF): 0.0102, Recall (CF): 0.0298
+  - Precision (CF): 0.0114, Recall (CF): 0.0336
+  - Precision (CF): 0.0126, Recall (CF): 0.0342
+  - Precision (CF): 0.0128, Recall (CF): 0.0323
+- `Precision (CF)` Dari seluruh rekomendasi yang diberikan oleh model ke pengguna, hanya `1.02%-1.28%`(~1.15%) yang benar-benar sesuai dengan selera mereka (buku dengan rating tertinggi).
+- `Recall (CF)` Dari semua buku favorit (yang pengguna beri rating tertinggi), hanya  `2.98%-3.42%`(~3.20%) yang berhasil direkomendasikan oleh model.
 
 ### Perbandingan Hasil Metrik
 
-| Model                     | Precision | Recall  |
-|--------------------------|-----------|---------|
-| Content-Based Filtering  | 0.0221    | 0.0632  |
-| Collaborative Filtering  | 0.0114    | 0.0367  |
+| Model                   | Precision | Recall |
+| ----------------------- | --------- | ------ |
+| Content-Based Filtering | 0.0221    | 0.0632 |
+| Collaborative Filtering | ~0.0115   | ~0.0320|
 
 - CBF unggul dalam precision dan recall dibandingkan CF.
 - CBF lebih baik dalam merekomendasikan buku yang benar-benar disukai (rating tinggi).
